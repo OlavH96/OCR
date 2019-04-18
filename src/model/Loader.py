@@ -6,6 +6,7 @@ import glob
 
 def load() -> [np.ndarray, [str]]:
     print("Loading Data...")
+
     data_dir = os.path.join('.', '..', 'data', 'chars74k-lite')
 
     data = []
@@ -22,3 +23,15 @@ def load() -> [np.ndarray, [str]]:
     print("Finished Loading Data")
 
     return data, labels
+
+
+def load_detection_images(path) -> np.ndarray:
+    data = []
+
+    for file in glob.glob(path + "/*.jpg"):
+        im = imageio.imread(file)
+        data.append(im)
+
+    data = np.array(data)
+
+    return data
