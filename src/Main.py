@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     model = Train.build_model(input_shape=(data.shape[1], data.shape[2], 1), output_len=Labels.from_char('z') + 1)
 
-    model = Train.train(train_data, train_labels, model, epochs=50)
+    model = Train.train(train_data, train_labels, model, epochs=10)
 
     loss, accuracy = Train.evaluate(model, test_data, test_labels)
     print("Model Loss", loss)
