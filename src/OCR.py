@@ -11,13 +11,16 @@ from src.model import Loader, Prepare, Labels
 import math
 
 DETECTION_IMAGES_DIR = os.path.join('..', 'data', 'detection-images')
-CUTOFF = 0.7
+CUTOFF = 0.2
 
 
 def euclidian(x1, y1, x2, y2) -> float:
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 
+# This filters out windows with only parts of the letter showing
+# Since the model might be very confident that half of a 'A' is a 'J'
+# So using confidence cutoff only does not work very well
 def white_pixel_filter(data: np.ndarray) -> bool:
     temp = data - 1
     temp = np.abs(temp)
@@ -27,8 +30,9 @@ def white_pixel_filter(data: np.ndarray) -> bool:
     return num_none_white_pixels < int(limit)
 
 
-# Do something here in which very close boxes are removed, and the one
-# with the highest certainty is preserved, to reduce overlapping
+# Removed predictions with very close other predictions, since in reality
+# you never want overlapping letters
+# Selects the closest letter with the highest certainty using euclidean distance
 def contention_filter(indexes, range_of_contention):
     result = []
 
@@ -48,8 +52,8 @@ def contention_filter(indexes, range_of_contention):
             result.append((i, j, label, certainty))
         else:
             best = max(contention, key=lambda x: x[3])  # break contention on certainty
-            result.append(best)
-            print("contention", contention)
+            if best not in result:
+                result.append(best)
 
     return result
 
@@ -76,7 +80,7 @@ def sliding_window_prediction(d, step):
     return indexes
 
 
-def draw(result):
+def draw(d, result, word):
     fig, ax = plt.subplots(1)
     ax.imshow(d, cmap='gray', vmin=0, vmax=1)
     for i, j, label, certainty in result:
@@ -86,9 +90,20 @@ def draw(result):
         y = i * window_step
 
         rect = patches.Rectangle((x, y), window_x, window_y, linewidth=1, edgecolor='r', facecolor='none')
-        ax.text(x, y - 5, label)
+        ax.text(x, y - 10, label)
         ax.add_patch(rect)
+    plt.title(word)
     plt.show()
+
+
+def construct_word(data, first_letter_highest=False):
+    if first_letter_highest:
+        data = list(sorted(data, key=lambda x: (x[0], x[1])))
+    else:
+        data = list(sorted(data, key=lambda x: (x[1], x[0])))
+    res = list(map(lambda x: x[2], data))
+
+    return "".join(res)
 
 
 if __name__ == '__main__':
@@ -105,10 +120,15 @@ if __name__ == '__main__':
 
     data = np.array([Prepare.normalize(d) for d in data])
 
-    for d in data[:1]:
-        d: np.ndarray = d
-        image_shape = d.shape
+    small = data[0]
+    large = data[1]
 
-        indexes = sliding_window_prediction(d, window_step)
-        result = contention_filter(indexes, range_of_contention=window_step)
-        draw(result)
+    indexes = sliding_window_prediction(small, window_step)
+    result = contention_filter(indexes, range_of_contention=int(window_step))
+    word = construct_word(result)
+    draw(small, result, word)
+
+    indexes = sliding_window_prediction(large, window_step)
+    result = contention_filter(indexes, range_of_contention=int(window_step - 2))
+    word = construct_word(result, first_letter_highest=True)
+    draw(large, result, word)

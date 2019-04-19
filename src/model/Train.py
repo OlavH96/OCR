@@ -9,7 +9,7 @@ def build_model(input_shape, output_len):
     model.add(Conv2D(28, kernel_size=(3, 3), input_shape=input_shape))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Flatten())  # Flattening the 2D arrays for fully connected layers
-    model.add(Dense(128, activation=tf.nn.relu))
+    model.add(Dense(256, activation=tf.nn.relu))
     model.add(Dropout(0.2))
     model.add(Dense(output_len, activation=tf.nn.softmax))
 
