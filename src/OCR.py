@@ -11,7 +11,8 @@ from src.model import Loader, Prepare, Labels
 import math
 
 DETECTION_IMAGES_DIR = os.path.join('..', 'data', 'detection-images')
-CUTOFF = 0.2
+# Cutoff for model certainty
+CUTOFF = 0.7
 
 
 def euclidian(x1, y1, x2, y2) -> float:
@@ -30,7 +31,7 @@ def white_pixel_filter(data: np.ndarray) -> bool:
     return num_none_white_pixels < int(limit)
 
 
-# Removed predictions with very close other predictions, since in reality
+# Removes predictions with very close other predictions, since in reality
 # you never want overlapping letters
 # Selects the closest letter with the highest certainty using euclidean distance
 def contention_filter(indexes, range_of_contention):
@@ -84,7 +85,7 @@ def draw(d, result, word):
     fig, ax = plt.subplots(1)
     ax.imshow(d, cmap='gray', vmin=0, vmax=1)
     for i, j, label, certainty in result:
-        print(i, j, label, certainty)
+        # print(i, j, label, certainty)
 
         x = j * window_step
         y = i * window_step
@@ -123,12 +124,15 @@ if __name__ == '__main__':
     small = data[0]
     large = data[1]
 
+    # small = Prepare.noise_removal(small)
+    # large = Prepare.noise_removal(large)
+
     indexes = sliding_window_prediction(small, window_step)
     result = contention_filter(indexes, range_of_contention=int(window_step))
     word = construct_word(result)
     draw(small, result, word)
 
     indexes = sliding_window_prediction(large, window_step)
-    result = contention_filter(indexes, range_of_contention=int(window_step - 2))
+    result = contention_filter(indexes, range_of_contention=int(window_step - 3))
     word = construct_word(result, first_letter_highest=True)
     draw(large, result, word)

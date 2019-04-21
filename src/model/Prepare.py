@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn.utils import shuffle as skshuffle
+from src.OCR import white_pixel_filter
+import matplotlib.pyplot as plt
 
 
 def normalize(data: np.ndarray) -> np.ndarray:
@@ -35,3 +37,9 @@ def expand_dims(data: np.ndarray) -> np.ndarray:
 def shuffle(x: np.ndarray, y: np.ndarray):
     x, y = skshuffle(x, y)
     return x, y
+
+
+def noise_removal(data: np.ndarray):
+    data[data > 0.5] = 1
+    data[data < 0.5] = 0
+    return data
