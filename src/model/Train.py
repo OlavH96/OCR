@@ -1,15 +1,15 @@
 import tensorflow as tf
-from keras.models import Sequential
 from keras.layers import *
+from keras.models import Sequential
 
 
 def build_model(input_shape, output_len):
     print("Input shape", input_shape)
     model = Sequential()
     model.add(Conv2D(28, kernel_size=(3, 3), input_shape=input_shape))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Flatten())  # Flattening the 2D arrays for fully connected layers
-    model.add(Dense(256, activation=tf.nn.relu))
+    model.add(MaxPooling2D(pool_size=(3, 3)))
+    model.add(Flatten())
+    model.add(Dense(128, activation=tf.nn.relu))
     model.add(Dropout(0.2))
     model.add(Dense(output_len, activation=tf.nn.softmax))
 
@@ -17,7 +17,7 @@ def build_model(input_shape, output_len):
 
 
 def train(x, y, model, epochs=10):
-    model.compile(optimizer='adam',
+    model.compile(optimizer='rmsprop',
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
 
@@ -27,10 +27,6 @@ def train(x, y, model, epochs=10):
 
 
 def evaluate(model, x, y):
-
-    print(x.shape)
-    print(y.shape)
-
     loss, acc = model.evaluate(x, y)
 
     return loss, acc

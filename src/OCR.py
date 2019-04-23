@@ -12,7 +12,7 @@ import math
 
 DETECTION_IMAGES_DIR = os.path.join('..', 'data', 'detection-images')
 # Cutoff for model certainty
-CUTOFF = 0.7
+CUTOFF = 0.5
 
 
 def euclidian(x1, y1, x2, y2) -> float:
@@ -23,7 +23,7 @@ def euclidian(x1, y1, x2, y2) -> float:
 # Since the model might be very confident that half of a 'A' is a 'J'
 # So using confidence cutoff only does not work very well
 def white_pixel_filter(data: np.ndarray) -> bool:
-    temp = data - 1
+    temp = data - 1  # invert image for count_nonzero, as there is no count_zero
     temp = np.abs(temp)
     num_pixels = funcs.reduce(operator.mul, temp.shape)
     num_none_white_pixels = np.count_nonzero(temp)
@@ -55,6 +55,9 @@ def contention_filter(indexes, range_of_contention):
             best = max(contention, key=lambda x: x[3])  # break contention on certainty
             if best not in result:
                 result.append(best)
+
+    # for e in result:
+    #     print(e[2], e[3])
 
     return result
 
@@ -97,6 +100,7 @@ def draw(d, result, word):
     plt.show()
 
 
+# Construct the detected word from the detected letters, this technique does not work very well for the second image.
 def construct_word(data, first_letter_highest=False):
     if first_letter_highest:
         data = list(sorted(data, key=lambda x: (x[0], x[1])))
@@ -112,13 +116,9 @@ if __name__ == '__main__':
     window_shape = model.input_shape
     window_x = window_shape[1]
     window_y = window_shape[2]
-
     window_step = 6
 
-    print("Window Shape", window_shape)
-
     data: [np.ndarray] = Loader.load_detection_images(DETECTION_IMAGES_DIR)
-
     data = np.array([Prepare.normalize(d) for d in data])
 
     small = data[0]
@@ -133,6 +133,13 @@ if __name__ == '__main__':
     draw(small, result, word)
 
     indexes = sliding_window_prediction(large, window_step)
-    result = contention_filter(indexes, range_of_contention=int(window_step - 3))
+    result = contention_filter(indexes, range_of_contention=int(window_step - 2))
     word = construct_word(result, first_letter_highest=True)
     draw(large, result, word)
+
+    # If you add extra images, this will handle those
+    for d in data[2:]:
+        indexes = sliding_window_prediction(d, window_step)
+        result = contention_filter(indexes, range_of_contention=int(window_step - 3))
+        word = construct_word(result)
+        draw(d, result, word)
