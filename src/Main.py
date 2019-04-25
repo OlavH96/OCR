@@ -15,8 +15,8 @@ def train_nn(epochs=10):
 
     data, labels = Prepare.shuffle(data, labels)
     data: np.ndarray = Prepare.normalize(data)
-    data = Prepare.noise_removal(data)
     train_data, test_data, train_labels, test_labels = Prepare.split(data, labels, percent_test=0.2)
+    train_data = Prepare.noise_removal(train_data)
     train_data = Prepare.expand_dims(train_data)
     test_data = Prepare.expand_dims(test_data)
 
@@ -32,7 +32,7 @@ def train_nn(epochs=10):
         model.save('model.h5')
 
     if display_graphs:
-        predict(test_data, model, two_d=True)
+        predict("NN", test_data, test_labels, model, two_d=True)
 
 
 def train_knn():
@@ -41,9 +41,10 @@ def train_knn():
 
     data, labels = Prepare.shuffle(data, labels)
     data: np.ndarray = Prepare.normalize(data)
-    data = Prepare.noise_removal(data)
+    # data = Prepare.noise_removal(data)
     data = Prepare.flatten(data)
     train_data, test_data, train_labels, test_labels = Prepare.split(data, labels, percent_test=0.2)
+    train_data = Prepare.noise_removal(train_data)
 
     knn = KNeighborsClassifier(n_neighbors=5)
     knn.fit(train_data, train_labels)
@@ -55,28 +56,29 @@ def train_knn():
         joblib.dump(knn, 'knn_model.pkl')
 
     if display_graphs:
-        predict(test_data, knn, two_d=False)
+        predict("KNN", test_data, test_labels, knn, two_d=False)
 
 
-def predict(data, model, two_d=True):
+def predict(prefix, data, labels, model, two_d=True):
     p_data = data[:10]
+    labels = labels[:10]
     predict = model.predict(p_data)
     if two_d:
         predict = predict.argmax(axis=1)
 
-    for x, p in zip(p_data, predict):
+    for x, p, l in zip(p_data, predict, labels):
         x: np.ndarray = x
 
         x = np.reshape(x, newshape=(20, 20))
 
         plt.imshow(x, cmap='gray')
-        plt.title(Labels.from_int(p))
+        plt.title(prefix+": actual="+Labels.from_int(l)+", predicted="+Labels.from_int(p))
         plt.show()
 
 
 if __name__ == '__main__':
-    save_model = False
-    display_graphs = False
+    save_model = True
+    display_graphs = True
 
-    # train_knn()
+    train_knn()
     train_nn(epochs=20)
